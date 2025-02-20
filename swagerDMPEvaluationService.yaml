@@ -1,0 +1,276 @@
+openapi: 3.0.1
+info:
+  title: DMP Evaluation Service API
+  description: API for evaluating maDMPs and retrieving evaluation reports.
+  version: 1.0.0
+
+servers:
+  - url: https://api.dmp-eval.com
+    description: Production Server
+  - url: https://staging.dmp-eval.com
+    description: Staging Server
+
+tags:
+  - name: Evaluation
+    description: Everything to perform the evaluation of a maDMP
+
+
+paths:
+  /evaluate:
+    post:
+      tags:
+        - Evaluation
+      summary: Request an evaluation of a maDMP
+      description: Request an evaluation of a maDMP based in the parameters
+      operationId: evaluateDMP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                maDMP:
+                  type: object
+                dataLifecycle:
+                  type: string
+                  enum: [planning, finished]
+                evaluationParams:
+                  type: object
+                  properties:
+                    evaluatorId:
+                      type: string
+                    dimensionId:
+                      type: string
+                    benchmarkId:
+                      type: array
+                      items:
+                        type: string
+                    metric:
+                      type: string
+                    test:
+                      type: string
+                standartId:
+                  type: string
+                reportId:
+                  type: string
+                  nullable: true
+      responses:
+        '200':
+          description: Evaluation results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvaluationResponse'
+  
+  /report:
+    get:
+      tags:
+        - Evaluation
+      summary: Retrieve the evaluation report for a speciifc maDMP
+      description: Retrieve the evaluation report for a speciifc maDMP
+      operationId: getEvaluationReport
+      parameters:
+        - name: reportId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Evaluation report details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvaluationReport'
+                
+    delete:
+      tags:
+        - Evaluation
+      summary: Delete a report
+      description: Delete a report created before 
+      operationId: deleteEvaluationReport
+      parameters:
+        - name: evaluationReportId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Deletion of the evaluation report was done succefully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  evaluationReportid:
+                    type: string
+                
+  
+  /evaluation:
+    get:
+      tags:
+        - Evaluation
+      summary: Retrieve the result of a spcific evaluation
+      description: Retrieve the evaluation result from the data store component
+      responses:
+        '200':
+          description: Evaluation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvaluationResponse'
+    
+    delete:
+      tags:
+        - Evaluation
+      summary: Delete an evaluation
+      description: Delete an evaluation 
+      operationId: deleteEvaluation
+      parameters:
+        - name: evaluationId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Deletion of the evaluation test was done succefully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  evaluationId:
+                    type: string
+  
+  /config:
+    get:
+      tags:
+        - Evaluation
+      summary: Retrieve service configuration
+      description: Retrieve the configuration of the service, this means return a list of which evaluators and ontologies are using in the service
+      operationId: getServiceConfig
+      responses:
+        '200':
+          description: Service configuration details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceConfig'
+
+  /config/resource:
+    get:
+      tags:
+        - Evaluation
+      summary: Get details of a specific ontology or evaluator
+      description: Get the complete information about the specific resoruce (ontology or Evaluator)
+      operationId: getResourceDetails
+      parameters:
+        - name: resourceId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Resource details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceDetails'
+                
+
+components:
+  schemas:
+    EvaluationResponse:
+      type: object
+      properties:
+        reportId:
+          type: string
+        evaluationId:
+          type: string
+        evaluationParams:
+          type: object
+          properties:
+            evaluator:
+              type: string
+            dimension:
+              type: string
+            benchmark:
+              type: string
+            metric:
+              type: string
+            test:
+              type: string
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              testAproved:
+                type: boolean
+              propertyEvaluated:
+                type: string
+              testDescription:
+                type: string
+              failureCause:
+                type: string
+                nullable: true
+    
+    EvaluationReport:
+      type: object
+      properties:
+        reportId:
+          type: string
+        evaluations:
+          type: array
+          items:
+            $ref: '#/components/schemas/EvaluationResponse'
+    
+    ServiceConfig:
+      type: object
+      properties:
+        internalResources:
+          type: array
+          items:
+            type: string
+        ontologies:
+          type: array
+          items:
+            type: string
+        evaluators:
+          type: array
+          items:
+            type: string
+    
+    ResourceDetails:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum: [ontology, evaluator]
+        details:
+          type: object
+          
+    maDMP:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum: [ontology, evaluator]
+        details:
+          type: object
